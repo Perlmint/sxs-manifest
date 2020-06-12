@@ -1,2 +1,2 @@
-# sxs-manifest
-Microsoft SxS manifest generator
+# SxS-manifest
+Microsoft SxS assembly manifest generator

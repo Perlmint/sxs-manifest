@@ -1,0 +1,15 @@
+[package]
+name = "sxs-manifest"
+description = "Microsoft SxS manifest generator"
+version = "0.1.0"
+authors = ["Gyusun Yeom <omniavinco@gmail.com>"]
+edition = "2018"
+license = "MIT"
+keywords = ["SxS", "manifest", "assembly"]
+
+[dependencies]
+thiserror = "^1.0"
+xml-rs = "^0.8"
+
+[dev-dependencies]
+doc-comment = "^0.3"
