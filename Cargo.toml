@@ -10,6 +10,3 @@ keywords = ["SxS", "manifest", "assembly"]
 [dependencies]
 thiserror = "^1.0"
 xml-rs = "^0.8"
-
-[dev-dependencies]
-doc-comment = "^0.3"
