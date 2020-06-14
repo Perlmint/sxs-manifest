@@ -1,4 +1,4 @@
-use crate::xml_alias::{XmlName, XmlNamespace};
+use crate::xml_alias::{XmlAttribute, XmlName, XmlNamespace};
 use crate::{
     consts::NS_MS_ASM_V1,
     debug::Path,
@@ -69,12 +69,13 @@ impl AssemblyVersion {
 
 impl SerializableValue for AssemblyVersion {
     fn serialize(&self) -> Cow<'_, str> {
-        let mut version = format!("{}.{}.{}", self.major, self.minor, self.build);
-        if let Some(revision) = self.revision {
-            write!(unsafe { version.as_mut_vec() }, ".{}", revision).unwrap();
-        }
-
-        Cow::Owned(version)
+        Cow::Owned(format!(
+            "{}.{}.{}.{}",
+            self.major,
+            self.minor,
+            self.build,
+            self.revision.unwrap_or(0)
+        ))
     }
 }
 
@@ -115,6 +116,37 @@ impl AssemblyIdentity {
         prefix: None,
     };
 
+    const ATTRIBUTE_TYPE_NAME: XmlName<'static> = XmlName {
+        local_name: "type",
+        namespace: Some(NS_MS_ASM_V1),
+        prefix: None,
+    };
+    const ATTRIBUTE_NAME_NAME: XmlName<'static> = XmlName {
+        local_name: "name",
+        namespace: Some(NS_MS_ASM_V1),
+        prefix: None,
+    };
+    const ATTRIBUTE_LANGUAGE_NAME: XmlName<'static> = XmlName {
+        local_name: "language",
+        namespace: Some(NS_MS_ASM_V1),
+        prefix: None,
+    };
+    const ATTRIBUTE_PROCESS_ARCHITECTURE_NAME: XmlName<'static> = XmlName {
+        local_name: "processorArchitecture",
+        namespace: Some(NS_MS_ASM_V1),
+        prefix: None,
+    };
+    const ATTRIBUTE_VERSION_NAME: XmlName<'static> = XmlName {
+        local_name: "version",
+        namespace: Some(NS_MS_ASM_V1),
+        prefix: None,
+    };
+    const ATTRIBUTE_PUBLIC_KEY_TOKEN_NAME: XmlName<'static> = XmlName {
+        local_name: "publicKeyToken",
+        namespace: Some(NS_MS_ASM_V1),
+        prefix: None,
+    };
+
     #[allow(missing_docs)]
     pub fn new<S: AsRef<str>>(name: S) -> Self {
         AssemblyIdentity {
@@ -134,9 +166,65 @@ impl SerializableElement for AssemblyIdentity {
         writer: &mut EventWriter<W>,
         _path: Path<'_>,
     ) -> SerializeResult<()> {
+        let mut attributes = Vec::<XmlAttribute>::new();
+
+        let type_val = self.r#type.serialize();
+        attributes.push(XmlAttribute {
+            name: AssemblyIdentity::ATTRIBUTE_TYPE_NAME,
+            value: &type_val,
+        });
+
+        attributes.push(XmlAttribute {
+            name: AssemblyIdentity::ATTRIBUTE_NAME_NAME,
+            value: &self.name,
+        });
+
+        if let Some(language) = &self.language {
+            attributes.push(XmlAttribute {
+                name: AssemblyIdentity::ATTRIBUTE_LANGUAGE_NAME,
+                value: language,
+            });
+        }
+
+        let process_architecture = if let Some(process_architecture) = &self.process_architecture {
+            Some(process_architecture.serialize())
+        } else {
+            None
+        };
+        if let Some(process_architecture) = &process_architecture {
+            attributes.push(XmlAttribute {
+                name: AssemblyIdentity::ATTRIBUTE_PROCESS_ARCHITECTURE_NAME,
+                value: process_architecture,
+            });
+        }
+
+        let version = if let Some(version) = &self.version {
+            Some(version.serialize())
+        } else {
+            None
+        };
+        if let Some(version) = &version {
+            attributes.push(XmlAttribute {
+                name: AssemblyIdentity::ATTRIBUTE_VERSION_NAME,
+                value: version,
+            });
+        }
+
+        let public_key_token = if let Some(public_key_token) = &self.public_key_token {
+            Some(public_key_token.serialize())
+        } else {
+            None
+        };
+        if let Some(public_key_token) = &public_key_token {
+            attributes.push(XmlAttribute {
+                name: AssemblyIdentity::ATTRIBUTE_PUBLIC_KEY_TOKEN_NAME,
+                value: public_key_token,
+            });
+        }
+
         writer.write(XmlEvent::StartElement {
             name: AssemblyIdentity::ELEMENT_NAME,
-            attributes: Cow::Borrowed(&[]),
+            attributes: Cow::Borrowed(&attributes),
             namespace: Cow::Borrowed(&XmlNamespace::empty()),
         })?;
         writer.write(XmlEvent::EndElement { name: None })?;
